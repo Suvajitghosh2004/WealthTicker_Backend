@@ -37,7 +37,7 @@ if (process.env.NODE_ENV === 'development') {
 
 app.use('/api', globalRateLimiter)
 
-// Public
+// ── Public routes ──────────────────────────────────────────────
 app.use('/api/auth', authRoutes)
 app.use('/api/posts', publicPostRouter)
 app.use('/api/categories', categoryRoutes)
@@ -46,7 +46,7 @@ app.use('/api/newsletter', newsletterRoutes)
 app.use('/api/analytics', analyticsRoutes)
 app.use('/api/contact', contactRoutes)
 
-// Admin
+// ── Admin routes ───────────────────────────────────────────────
 app.use('/api/admin/posts', adminPostRouter)
 app.use('/api/admin/categories', categoryRoutes)
 app.use('/api/admin/comments', commentRoutes)
@@ -54,56 +54,15 @@ app.use('/api/admin/newsletter', newsletterRoutes)
 app.use('/api/admin/media', mediaRoutes)
 app.use('/api/admin/analytics', analyticsRoutes)
 
+// Health check
 app.get('/health', (req, res) => res.json({ status: 'ok', env: process.env.NODE_ENV }))
-// ── Temp seed route — REMOVE AFTER USE ────────────────────────
-app.get('/api/seed', async (req, res) => {
-  try {
-    const User = (await import('./models/User.js')).default
-    const Category = (await import('./models/Category.js')).default
 
-    const categories = [
-      { name: 'Investing',    slug: 'investing',    color: '#3B82F6', description: 'Stock market, ETFs, index funds and investment strategies.' },
-      { name: 'Budgeting',    slug: 'budgeting',    color: '#10B981', description: 'Personal budgeting tips, savings strategies and financial planning.' },
-      { name: 'Crypto',       slug: 'crypto',       color: '#F59E0B', description: 'Bitcoin, Ethereum, DeFi and cryptocurrency news.' },
-      { name: 'Tax',          slug: 'tax',          color: '#EF4444', description: 'Tax tips, deductions and strategies to keep more of your money.' },
-      { name: 'Credit Cards', slug: 'credit-cards', color: '#8B5CF6', description: 'Best credit cards, rewards, cashback and credit score tips.' },
-      { name: 'Retirement',   slug: 'retirement',   color: '#EC4899', description: '401k, IRA, Roth and retirement planning strategies.' }
-    ]
-
-    for (const cat of categories) {
-      await Category.findOneAndUpdate(
-        { slug: cat.slug },
-        cat,
-        { upsert: true, new: true }
-      )
-    }
-
-    const existing = await User.findOne({ email: process.env.ADMIN_EMAIL })
-    if (!existing) {
-      await User.create({
-        name: 'WealthTicker Admin',
-        email: process.env.ADMIN_EMAIL,
-        password: process.env.ADMIN_PASSWORD,
-        role: 'admin'
-      })
-    }
-
-    res.json({
-      success: true,
-      message: 'Seeded successfully!',
-      admin: process.env.ADMIN_EMAIL,
-      categories: categories.map(c => c.name)
-    })
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message })
-  }
-})
-
-// 404 handler — keep this AFTER seed route
+// 404 handler
 app.use('/api/*', (req, res) => {
   res.status(404).json({ success: false, message: `Route ${req.originalUrl} not found` })
 })
 
+// Global error handler
 app.use(errorHandler)
 
 const PORT = process.env.PORT || 5000
