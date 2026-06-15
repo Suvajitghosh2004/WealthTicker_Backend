@@ -1,4 +1,4 @@
-import './config/env.js' // ← MUST be first line
+import './config/env.js'
 
 import express from 'express'
 import cors from 'cors'
@@ -26,7 +26,23 @@ const app = express()
 
 app.use(helmet())
 app.use(mongoSanitize())
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }))
+
+// CORS — handles trailing slash and multiple origins
+app.use(cors({
+  origin: (origin, callback) => {
+    const allowed = [
+      'https://wealthticker.vercel.app',
+      'http://localhost:5173'
+    ]
+    if (!origin || allowed.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
+  credentials: true
+}))
+
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
 app.use(cookieParser())
