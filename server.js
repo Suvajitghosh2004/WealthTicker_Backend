@@ -19,6 +19,7 @@ import newsletterRoutes from './routes/newsletterRoutes.js'
 import mediaRoutes from './routes/mediaRoutes.js'
 import analyticsRoutes from './routes/analyticsRoutes.js'
 import contactRoutes from './routes/contactRoutes.js'
+import sitemapRoutes from './routes/sitemapRoutes.js'
 
 connectDB()
 
@@ -72,6 +73,8 @@ app.use('/api/admin/analytics', analyticsRoutes)
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'ok', env: process.env.NODE_ENV }))
+// Sitemap
+app.use('/', sitemapRoutes)
 
 // 404 handler
 app.use('/api/*', (req, res) => {
