@@ -28,13 +28,14 @@ const app = express()
 app.use(helmet())
 app.use(mongoSanitize())
 
-// CORS — handles trailing slash and multiple origins
+// ── CORS ───────────────────────────────────────────────────────
 app.use(cors({
   origin: (origin, callback) => {
     const allowed = [
       'https://wealthticker.vercel.app',
       'http://localhost:5173'
     ]
+    // Allow requests with no origin (Googlebot, curl, mobile apps, UptimeRobot)
     if (!origin || allowed.includes(origin)) {
       callback(null, true)
     } else {
@@ -54,6 +55,20 @@ if (process.env.NODE_ENV === 'development') {
 
 app.use('/api', globalRateLimiter)
 
+// ── Allow all bots to access API ───────────────────────────────
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain')
+  res.send('User-agent: *\nAllow: /')
+})
+
+// ── Health check ───────────────────────────────────────────────
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', env: process.env.NODE_ENV })
+})
+
+// ── Sitemap ────────────────────────────────────────────────────
+app.use('/', sitemapRoutes)
+
 // ── Public routes ──────────────────────────────────────────────
 app.use('/api/auth', authRoutes)
 app.use('/api/posts', publicPostRouter)
@@ -71,17 +86,12 @@ app.use('/api/admin/newsletter', newsletterRoutes)
 app.use('/api/admin/media', mediaRoutes)
 app.use('/api/admin/analytics', analyticsRoutes)
 
-// Health check
-app.get('/health', (req, res) => res.json({ status: 'ok', env: process.env.NODE_ENV }))
-// Sitemap
-app.use('/', sitemapRoutes)
-
-// 404 handler
+// ── 404 handler ────────────────────────────────────────────────
 app.use('/api/*', (req, res) => {
   res.status(404).json({ success: false, message: `Route ${req.originalUrl} not found` })
 })
 
-// Global error handler
+// ── Global error handler ───────────────────────────────────────
 app.use(errorHandler)
 
 const PORT = process.env.PORT || 5000
